@@ -1,0 +1,78 @@
+#!/usr/bin/env perl 
+#author:terrencehan(hanliang1990@gmail.com)
+#This script is used to extract data form StarDict's dictionary
+#file from which we can query words.
+use strict;
+use warnings;
+use utf8;
+use 5.010;
+use lib '../lib';
+use Simple::Dict;
+use File::Slurp;
+
+my $dicts_dir = "../dicts/";
+
+my @dicts;
+push @dicts, new Simple::Dict( dict_dir => $_ )
+  for ( glob File::Spec->catdir( $dicts_dir, "*" ) );
+
+
+#main loop
+print "word>";
+my $sofar;
+while (<>) {
+    chomp;
+    if ( defined $sofar and $_ ) {
+        $sofar .= $_;
+    }
+    else {
+        $sofar = $_;
+    }
+
+    if ( $sofar eq 'g' ) {
+        `gvim -f ./result +1`;
+        undef $sofar;
+    }
+    elsif ( $sofar eq 'q' ) {
+        exit;
+    }
+    elsif ( $sofar =~ /\*$/ ) {
+        append_file( "dict.remeber",
+            substr( $sofar, 0, length($sofar) - 1 ) . "\n" );
+        undef $sofar;
+    }
+    elsif ( my $res = search_in_dicts($sofar) ) {
+        print "\n" x 100;
+        $res =~ s/( \d+ )/\n$1/g;
+        open my $result_file, ">", "result";
+        print $_ "$sofar\n$res" for ( *STDOUT, $result_file );
+        append_file( "dict.record", $sofar . "\n" );
+        undef $sofar;
+
+    }
+    else {    #not found
+        get_hint_form_dicts($sofar);
+    }
+    print "word>${defined $sofar?\$sofar:\''}";
+
+}
+
+#functions
+sub search_in_dicts {
+    my $word = shift;
+    my $res  = "";
+    for (@dicts) {
+        my $t = $_->search_word($word);
+        $res .= $t . "\n" x 2 if $t;
+    }
+    $res;
+}
+
+sub get_hint_form_dicts {
+    my $sofar = shift;
+    my %hash;
+    for (@dicts) {
+        @hash{ $_->get_hint($sofar) } = 1;
+    }
+    say " " x 5 . $_ for keys %hash;
+}

@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+use lib '../lib';
+use Simple::Dict;
+use 5.010;
+
+open $record_file, "<", "dict.record" or die;
+
+while (<$record_file>) {
+    chomp;
+    $words{$_} += 1;
+}
+
+open $out, ">", "out";
+$dict =
+  new Simple::Dict( dict_dir => "../dicts/stardict-langdao-ec-gb-2.4.2/" );
+for ( keys %words ) {
+    print "\n" x 100;
+    say;
+    say $dict->search_word($_);
+    sleep $words{$_} * 5;
+}
