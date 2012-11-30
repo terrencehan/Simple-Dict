@@ -13,9 +13,12 @@ while (<$record_file>) {
 open $out, ">", "out";
 $dict =
   new Simple::Dict( dict_dir => "../dicts/stardict-langdao-ec-gb-2.4.2/" );
+$total = keys %words;
+$count = 1;
 for ( keys %words ) {
     print "\n" x 100;
     say;
     say $dict->search_word($_);
+    say $count++. '/' . $total;
     sleep $words{$_} * 5;
 }
